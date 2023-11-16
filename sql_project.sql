@@ -103,7 +103,7 @@ Select *,(RollingPeopleVaccinated/Population)*100
 from #PercentPopulationVaccinated
 
 
----People being vacinnated in context of world per day
+---People being vacinnated in context of world per day (USING CTE
 
 with cte(date,sum_vaccinate)
 as
@@ -118,7 +118,43 @@ GROUP BY dea.date
 select *
 from cte
 where sum_vaccinate is not null
-order by 
+order by date
+
+
+---Temp Table
+DROP table if exists PercentPopulationVaccinated
+Create Table PercentPopulationVaccinated
+(
+continent nvarchar (255),
+location nvarchar(255),
+date datetime,
+population numeric,
+new_vaccinated_smoothed numeric,
+RollingPeopleVaccinated numeric)
+Insert into #PercentPopulationVaccinated
+Select dea.continent,dea.location, dea.date,dea.population,cast(vac.new_people_vaccinated_smoothed as int)
+, Sum(cast(vac.new_people_vaccinated_smoothed as int)) over (Partition by dea.location order by dea.location
+,dea.Date) as RollingPeopleVaccinated
+From Portfolio_Project..covid_death dea
+join Portfolio_Project..covid_vaccine vac
+	on dea.location=vac.location
+	and dea.date=vac.date
+where dea.continent is not null
+--order by 1,2,3
+
+
+
+----Creating View for later
+Create View PercentagePopulationVaccinated1 as
+Select dea.continent,dea.location, dea.date,dea.population,vac.new_people_vaccinated_smoothed
+, Sum(cast(vac.new_people_vaccinated_smoothed as int)) over (Partition by dea.location order by dea.location
+,dea.Date) as RollingPeopleVaccinated
+From Portfolio_Project..covid_death dea
+join Portfolio_Project..covid_vaccine vac
+	on dea.location=vac.location
+	and dea.date=vac.date
+where dea.continent is not null
+--order by 1,2,3
 
 
 
